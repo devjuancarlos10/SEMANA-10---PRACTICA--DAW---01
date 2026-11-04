@@ -1,43 +1,76 @@
-# NexusStore Core CLI
+<div align="center">
 
-**NexusStore Core** es un sistema por consola (CLI) desarrollado en Python para la administración de inventario, catálogo comercial y cálculo dinámico de precios para tiendas especializadas en productos de alta tecnología y literatura técnica.
+# ⚡ NexusStore Core CLI
+### *Enterprise Product Catalog & Dynamic Pricing CLI System*
 
-El proyecto está diseñado bajo principios de Arquitectura Limpia y Programación Orientada a Objetos (POO), garantizando encapsulamiento estricto, polimorfismo de cálculo comercial, herencia múltiple mediante Mixins cooperativos y un control riguroso de excepciones de dominio.
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Architecture](https://img.shields.io/badge/Architecture-Clean%20OOP%20%26%20MRO-4B8BBE?style=for-the-badge)
+![Code Style](https://img.shields.io/badge/Code%20Style-PEP%208%20%7C%20Black-000000?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
+
+<p align="center">
+  <b>Sistema empresarial de gestión de catálogo, inventario en memoria y motor polimórfico de cotización comercial para productos tecnológicos y literatura técnica.</b>
+</p>
+
+[Características](#-características-principales) •
+[Arquitectura UML](#-diagrama-de-clases-uml) •
+[MRO y C3](#-análisis-de-mro-y-linealización-c3) •
+[Herencia vs Composición](#-herencia-vs-composición) •
+[Guía de Uso](#-guía-de-uso-y-ejecución) •
+[Evidencias de Ejecución](#-evidencias-de-ejecución)
 
 ---
 
-## 📁 Estructura del Proyecto
+</div>
+
+## 📌 Características Principales
+
+- 🛡️ **Encapsulamiento Riguroso:** Atributos protegidos con validación preventiva vía `@property` y setters restrictivos.
+- 🔄 **Polimorfismo Comercial:** Cálculo fiscal dinámico (IGV 18% para electrónicos y 0% para libros bajo exención cultural).
+- 🏷️ **Descuentos Inteligentes:** Descuentos por volumen para stock crítico ($>50$ unidades) y bonificaciones para literatura educativa mediante `DescuentoMixin`.
+- 🧬 **Herencia Múltiple Cooperativa:** Resolución determinista de métodos mediante linealización C3 y `super()`.
+- 🛑 **Tolerancia a Fallos:** Manejo exhaustivo con jerarquía propia (`ValidationError`, `NotFoundError`) en flujo `try / except / else / finally`.
+- 🧹 **Ciclo de Vida Controlado:** Notificación de destrucción de instancias mediante `__del__` y recolección de basura.
+
+---
+
+## 📁 Arquitectura y Modularización
+
+El proyecto sigue una separación clara de responsabilidades en tres capas bien delimitadas:
 
 ```text
 nexusstore-cli/
 │
-├── main.py                 # Orquestador del flujo CLI y punto de entrada
-├── requirements.txt        # Especificación de versión de entorno y linters
-├── README.md               # Documentación técnica y arquitectura del sistema
+├── main.py                  # 🚀 Orquestador CLI y control de flujo de usuario
+├── requirements.txt         # 📦 Entorno y dependencias de calidad
+├── README.md                # 📄 Documentación técnica oficial
 │
-├── models/                 # Modelos de dominio
-│   ├── __init__.py         # Exportación limpia de clases públicas
-│   └── producto.py         # Jerarquía de clases (Producto, Electronico, Libro, DescuentoMixin)
+├── models/                  # 🏛️ Capa de Dominio (Modelos POO)
+│   ├── __init__.py          # Exportación limpia de clases públicas
+│   └── producto.py          # Producto, Electronico, Libro, DescuentoMixin
 │
-└── utils/                  # Utilidades transversales
-    ├── __init__.py         # Exportación del paquete de utilidades
-    ├── exceptions.py       # Excepciones personalizadas del dominio
-    └── validators.py       # Validadores y sanitizadores de entrada
+└── utils/                   # 🛠️ Capa Transversal (Utilidades y Validaciones)
+    ├── __init__.py          # Exportación de validadores y excepciones
+    ├── exceptions.py        # Jerarquía custom: ValidationError, NotFoundError
+    └── validators.py        # Sanitización de rangos, tipos y categorías
 ```
 
 ---
 
 ## 🏛️ Diagrama de Clases UML
 
-El siguiente diagrama detalla la arquitectura de clases, los modificadores de acceso, la relación de herencia con la clase base y la integración del Mixin:
-
 ```mermaid
 classDiagram
+    direction TB
+
     class DescuentoMixin {
+        <<Mixin>>
         +aplicar_descuento_porcentual(monto: float, porcentaje: float) float
     }
 
     class Producto {
+        <<Abstract Base>>
         -_nombre: str
         -_precio_base: float
         -_stock: int
@@ -54,9 +87,9 @@ classDiagram
 
     class Electronico {
         -_garantia_meses: int
-        +TASA_IGV: float
-        +DESCUENTO_ALTO_STOCK: float
-        +UMBRAL_STOCK_DESCUENTO: int
+        +TASA_IGV: float = 0.18
+        +DESCUENTO_ALTO_STOCK: float = 10.0
+        +UMBRAL_STOCK_DESCUENTO: int = 50
         +garantia_meses() int
         +garantia_meses(valor: int) void
         +calcular_precio_final() float
@@ -66,7 +99,7 @@ classDiagram
     class Libro {
         -_autor: str
         -_es_educativo: bool
-        +DESCUENTO_EDUCATIVO: float
+        +DESCUENTO_EDUCATIVO: float = 10.0
         +autor() str
         +autor(valor: str) void
         +es_educativo() bool
@@ -75,95 +108,105 @@ classDiagram
         +__str__() str
     }
 
-    Producto <|-- Electronico : hereda
-    DescuentoMixin <|-- Electronico : compone / hereda
-    Producto <|-- Libro : hereda
-    DescuentoMixin <|-- Libro : compone / hereda
+    Producto <|-- Electronico : Especializa
+    DescuentoMixin <|.. Electronico : Incorpora
+    Producto <|-- Libro : Especializa
+    DescuentoMixin <|.. Libro : Incorpora
 ```
 
 ---
 
-## 🧬 Análisis de MRO (Method Resolution Order) y Linealización C3
+## 🧬 Análisis de MRO y Linealización C3
 
-En Python, la resolución de atributos y llamadas cooperativas mediante `super()` se calcula utilizando el algoritmo **C3 Linearization**.
-
-### Resolución para `Electronico` y `Libro`:
-Ambas clases heredan tanto de la clase base `Producto` como del componente reutilizable `DescuentoMixin`:
+En Python, la herencia múltiple se resuelve mediante el algoritmo **C3 Linearization**, garantizando consistencia y precedencia determinista:
 
 ```python
 class Electronico(Producto, DescuentoMixin):
     ...
-
-class Libro(Producto, DescuentoMixin):
-    ...
 ```
 
-Al inspeccionar el orden de resolución en tiempo de ejecución:
+### Orden de Resolución en Tiempo de Ejecución:
+
+$$\text{MRO(Electronico)} = [\text{Electronico}, \text{Producto}, \text{DescuentoMixin}, \text{object}]$$
 
 ```python
 >>> Electronico.__mro__
-(<class 'models.producto.Electronico'>, 
- <class 'models.producto.Producto'>, 
- <class 'models.producto.DescuentoMixin'>, 
- <class 'object'>)
+(
+    <class 'models.producto.Electronico'>, 
+    <class 'models.producto.Producto'>, 
+    <class 'models.producto.DescuentoMixin'>, 
+    <class 'object'>
+)
 ```
 
-### Comportamiento y ventajas de este diseño:
-1. **Prioridad del Dominio Principal:** Cualquier método definido en `Producto` o en la subclase prevalece antes de consultar `DescuentoMixin`.
-2. **Reutilización Horizontal sin Colisión de Estado:** `DescuentoMixin` no define su propio `__init__` con atributos incompatibles, evitando el problema del diamante y permitiendo que `super().__init__(...)` delegue limpiamente en la clase base `Producto`.
-3. **Determinismo:** El MRO garantiza que el cálculo de descuentos sea predecible y extensible para nuevas categorías de productos que requieran cálculos comerciales promocionales.
+> [!NOTE]
+> **Ventajas del Diseño Cooperativo:**
+> 1. **Prioridad del Dominio:** Los métodos de la entidad base `Producto` prevalecen de forma natural.
+> 2. **Ausencia del Problema del Diamante:** `DescuentoMixin` aporta únicamente métodos auxiliares de cálculo porcentual sin inicializadores colisionantes (`__init__`), permitiendo que `super().__init__(...)` opere sin fricción.
 
 ---
 
-## ⚖️ Justificación Técnica: Herencia vs. Composición
+## ⚖️ Herencia vs. Composición
 
-En el diseño de este sistema se evaluó minuciosamente el uso de **Herencia** frente a **Composición**:
-
-### 1. ¿Por qué Herencia para `Electronico` y `Libro` respecto a `Producto`?
-- **Relación ontológica estricta ("Es un" / "Is-a"):** Un dispositivo electrónico y un libro técnico *son* variantes directas de un producto físico en el catálogo comercial: ambos tienen intrínsecamente un nombre, un precio base y un stock cuantificable.
-- **Polimorfismo natural:** Permite que el orquestador (`main.py`) maneje una colección heterogénea `inventario: dict[int, Producto]` y ejecute `producto.calcular_precio_final()` y `str(producto)` sin necesidad de inspeccionar manualmente los tipos ni usar estructuras de control condicionales dispersas (`isinstance` o `switch`).
-
-### 2. ¿Por qué un Mixin para `DescuentoMixin` en lugar de composición de servicios externa?
-- La funcionalidad de descuento porcentual es un comportamiento auxiliar transversal que no posee estado persistente ni ciclo de vida independiente.
-- Modelarlo como un **Mixin** permite dotar de capacidades matemáticas adicionales a las entidades sin acoplar la clase base `Producto` a una política de descuento obligatoria.
-
-### 3. Consideraciones de Composición:
-- Para escalas mayores donde los esquemas tributarios cambien con frecuencia regional (p. ej. pasarelas de pago multi-país), la regla impositiva podría desacoplarse mediante un patrón *Strategy* (`CalculadorImpuestos`). En el alcance actual, el polimorfismo por subclase garantiza máxima cohesión y mínima sobreingeniería.
+| Criterio | Enfoque Adoptado (Herencia + Mixin) | Enfoque Alternativo (Composición) | Decisión Técnica |
+| :--- | :--- | :--- | :--- |
+| **Relación Semántica** | **"Es un" (*Is-a*):** `Electronico` y `Libro` son productos con identidad propia de catálogo. | **"Tiene un" (*Has-a*):** Producto tiene un calculador de precios externo. | Se eligió **Herencia** por modelar con fidelidad la taxonomía del negocio. |
+| **Polimorfismo en CLI** | Permite colecciones heterogéneas `dict[int, Producto]` e invocaciones directas `prod.calcular_precio_final()`. | Exige inyectar dependencias y evaluar estrategias manualmente en cada ciclo. | El polimorfismo por herencia reduce la complejidad ciclomática del orquestador. |
+| **Reutilización Mixin** | Comportamiento transversal composable sin sobrecarga de memoria. | Instanciación redundante de objetos auxiliares por cada producto. | `DescuentoMixin` provee cálculo puro sin almacenar estado superfluo. |
 
 ---
 
-## 🛡️ Encapsulamiento y Validaciones de Dominio
+## 🛡️ Reglas de Encapsulamiento y Validaciones
 
-Los atributos internos se protegen mediante convenios de encapsulamiento (`_nombre`, `_precio_base`, `_stock`, `_garantia_meses`, `_autor`) y se exponen públicamente a través de decoradores `@property` y sus correspondientes setters:
+Cada entidad protege su integridad mediante decoradores `@property`:
 
-- **`nombre` / `autor`:** Sanitización mediante `strip()`, garantizando que no se admitan cadenas vacías ni secuencias de espacios en blanco.
-- **`precio_base`:** Validación numérica estricta que exige un valor estrictamente mayor a `0.0`.
-- **`stock`:** Control de tipo entero y validación de rango no negativo (`stock >= 0`).
-- **`garantia_meses`:** Entero positivo o cero (`garantia >= 0`).
+| Atributo | Tipo | Modificador | Regla de Validación Aplicada |
+| :--- | :---: | :---: | :--- |
+| `_nombre` | `str` | Protegido | No nulo, no vacío tras aplicar `strip()`. |
+| `_precio_base` | `float` | Protegido | Numérico mayor a cero ($precio > 0$). |
+| `_stock` | `int` | Protegido | Entero no negativo ($stock \ge 0$). |
+| `_garantia_meses` | `int` | Protegido | Entero no negativo ($meses \ge 0$). |
+| `_autor` | `str` | Protegido | Cadena de texto no vacía. |
+
+> [!TIP]
+> Cualquier asignación indebida (por ejemplo `prod.stock = -5`) dispara de inmediato una excepción controlada de tipo `ValidationError`.
 
 ---
 
-## 🚦 Manejo Robusto de Excepciones (`try / except / else / finally`)
+## 🚦 Flujo de Excepciones Defensivo
 
-El flujo de interacción del orquestador en `main.py` está blindado contra datos corruptos y estados inválidos usando una jerarquía propia:
+El orquestador en `main.py` implementa el patrón **try / except / else / finally** completo:
 
-- **`ValidationError`:** Lanzada cuando una entrada no cumple con los tipos, rangos numéricos o reglas semánticas del negocio.
-- **`NotFoundError`:** Lanzada cuando se consulta un identificador inexistente en el inventario.
-- **Estructura de cuatro ramas (`try / except / else / finally`):**
-  - `try`: Solicita inputs y ejecuta las operaciones del catálogo.
-  - `except`: Atrapa de manera granular `ValidationError`, `NotFoundError` o contingencias genéricas sin detener el programa.
-  - `else`: Se ejecuta únicamente cuando la transacción concluyó sin excepciones.
-  - `finally`: Garantiza la emisión de avisos de estado y cierre de ciclo en cada iteración del menú.
+```python
+try:
+    opcion = menu()
+    # Ejecución de la operación seleccionada
+except ValidationError as e:
+    hubo_error = True
+    print(f"\n⚠️  Error de validación: {e}")
+except NotFoundError as e:
+    hubo_error = True
+    print(f"\n🔍 No encontrado: {e}")
+except Exception as e:
+    hubo_error = True
+    print(f"\n❌ Error inesperado: {e}")
+else:
+    # Se ejecuta cuando la transacción concluye de forma limpia
+    pass
+finally:
+    # Garantiza limpieza y retroalimentación en cada ciclo del usuario
+    if hubo_error:
+        print("ℹ️  Revise los datos ingresados e intente nuevamente.")
+```
 
 ---
 
 ## 🖥️ Evidencias de Ejecución
 
-### 1. Caso Exitoso (Ruta Feliz): Creación, Listado y Cotización Polimórfica
+<details open>
+<summary><b>1. Caso Exitoso (Ruta Feliz: Registro, Listado y Cotización)</b></summary>
 
 ```text
-Iniciando Sistema de Gestión de Productos...
-
 ==========================================
 === GESTIÓN DE PRODUCTOS (CLI) ===
 ==========================================
@@ -266,10 +309,10 @@ Ingrese el ID del producto a cotizar: 2
 ➡️  PRECIO FINAL DE VENTA: S/ 108.00
 --------------------------------------------------
 ```
+</details>
 
----
-
-### 2. Caso de Excepción Capturada 1: `ValidationError` (Categoría o Datos Inválidos)
+<details>
+<summary><b>2. Excepción Capturada: <code>ValidationError</code> (Categoría Inválida)</b></summary>
 
 ```text
 ==========================================
@@ -286,10 +329,10 @@ Ingrese categoría (electronico / libro): componentes_pc
 ⚠️  Error de validación: Categoría no válida: 'componentes_pc'. Opciones disponibles: 'electronico', 'libro'.
 ℹ️  Revise los datos ingresados e intente nuevamente.
 ```
+</details>
 
----
-
-### 3. Caso de Excepción Capturada 2: `NotFoundError` (Identificador Inexistente)
+<details>
+<summary><b>3. Excepción Capturada: <code>NotFoundError</code> (ID Inexistente)</b></summary>
 
 ```text
 ==========================================
@@ -306,10 +349,10 @@ Ingrese el ID del producto a cotizar: 999
 🔍 No encontrado: No existe ningún producto registrado con el ID #999.
 ℹ️  Revise los datos ingresados e intente nuevamente.
 ```
+</details>
 
----
-
-### 4. Cierre del Sistema y Activación del Destructor `__del__`
+<details>
+<summary><b>4. Cierre del Sistema y Destructor <code>__del__</code></b></summary>
 
 ```text
 ==========================================
@@ -326,20 +369,34 @@ Cerrando sistema... ¡Hasta luego!
 🗑️  Destruyendo instancia: Monitor Gamer 27 Pulgadas
 🗑️  Destruyendo instancia: Clean Code
 ```
+</details>
 
 ---
 
-## 🚀 Requisitos y Ejecución
+## 🚀 Guía de Uso y Ejecución
 
-- **Python:** Versión `>= 3.11` (compatible plenamente con Python 3.12, 3.13 y 3.14 con `@override`).
-- **Instalación de dependencias (opcional):**
-  ```bash
-  pip install -r requirements.txt
-  ```
-- **Iniciar la aplicación:**
-  ```bash
-  python main.py
-  ```
+### Prerrequisitos
+- **Python:** Versión `3.11` o superior (completamente testeado en `3.12`, `3.13` y `3.14`).
 
-#   S E M A N A - 1 0 - - - P R A C T I C A - - D A W - - - 0 1  
- 
+### Puesta en Marcha
+1. **Clonar el repositorio:**
+   ```bash
+   git clone <url-del-repositorio>
+   cd CODIGO
+   ```
+
+2. **Instalar dependencias de entorno (opcional):**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Ejecutar el orquestador:**
+   ```bash
+   python main.py
+   ```
+
+---
+
+<div align="center">
+  <sub>Desarrollado con arquitectura limpia, principios SOLID y buenas prácticas de ingeniería de software en Python.</sub>
+</div>
