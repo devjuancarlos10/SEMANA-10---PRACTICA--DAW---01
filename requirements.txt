@@ -1,0 +1,6 @@
+# Python >= 3.11
+# Proyecto con biblioteca estándar pura de Python (sin dependencias externas obligatorias)
+# Dependencias recomendadas de calidad de código:
+# flake8>=6.0.0
+# black>=24.0.0
+
